@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 import { AppModule, ObserveInstrument } from './app.module';
 
 async function bootstrap() {
@@ -8,11 +9,15 @@ async function bootstrap() {
     instrument: ObserveInstrument,
   });
 
-  // Allow the Next.js admin frontend to call this API
+  // Enable cookie parser so HttpOnly cookies are parsed into req.cookies
+  app.use(cookieParser());
+
+  // Allow the Next.js admin frontend to call this API with HttpOnly cookies
   app.enableCors({
     origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   });
 
   // Validate and transform request bodies via DTOs

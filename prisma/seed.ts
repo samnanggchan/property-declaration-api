@@ -97,27 +97,116 @@ async function main() {
   const { rows } = await pool.query('SELECT COUNT(*) FROM declarations');
   const count = parseInt(rows[0].count, 10);
 
-  if (count > 0) {
-    console.log(`Skipping seed — ${count} declaration(s) already in database.`);
-    return;
+  if (count === 0) {
+    await pool.query(
+      `INSERT INTO declarations (id, cert_number, location, seller, buyer, husband, wife, joint, created_at, updated_at)
+       VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb, $8::jsonb, NOW(), NOW())`,
+      [
+        sampleDeclaration.id,
+        sampleDeclaration.cert_number,
+        sampleDeclaration.location,
+        sampleDeclaration.seller,
+        sampleDeclaration.buyer,
+        sampleDeclaration.husband,
+        sampleDeclaration.wife,
+        sampleDeclaration.joint,
+      ],
+    );
+    console.log('✅ Seeded 1 sample declaration into Neon PostgreSQL.');
+  } else {
+    console.log(`ℹ️ ${count} declaration(s) already in database.`);
   }
 
-  await pool.query(
-    `INSERT INTO declarations (id, cert_number, location, seller, buyer, husband, wife, joint, created_at, updated_at)
-     VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6::jsonb, $7::jsonb, $8::jsonb, NOW(), NOW())`,
-    [
-      sampleDeclaration.id,
-      sampleDeclaration.cert_number,
-      sampleDeclaration.location,
-      sampleDeclaration.seller,
-      sampleDeclaration.buyer,
-      sampleDeclaration.husband,
-      sampleDeclaration.wife,
-      sampleDeclaration.joint,
-    ],
-  );
+  // ─── Seed Roles & Permissions ───────────────────────────────────────────────
+  const permissions = [
+    'READ_USERS',
+    'WRITE_USERS',
+    'DELETE_USERS',
+    'READ_DECLARATIONS',
+    'WRITE_DECLARATIONS',
+    'DELETE_DECLARATIONS',
+  ];
 
-  console.log('✅ Seeded 1 sample declaration into Neon PostgreSQL.');
+  for (const perm of permissions) {
+    await pool.query(
+      `INSERT INTO permissions (id, name) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING`,
+      [randomUUID(), perm],
+    );
+  }
+
+  const roles = [
+    {
+      name: 'SUPER_ADMIN',
+      permissions: [
+        'READ_USERS',
+        'WRITE_USERS',
+        'DELETE_USERS',
+        'READ_DECLARATIONS',
+        'WRITE_DECLARATIONS',
+        'DELETE_DECLARATIONS',
+      ],
+    },
+    {
+      name: 'ADMIN',
+      permissions: [
+        'READ_USERS',
+        'WRITE_USERS',
+        'READ_DECLARATIONS',
+        'WRITE_DECLARATIONS',
+        'DELETE_DECLARATIONS',
+      ],
+    },
+    {
+      name: 'MODERATOR',
+      permissions: ['READ_USERS', 'READ_DECLARATIONS', 'WRITE_DECLARATIONS'],
+    },
+    {
+      name: 'VIEWER',
+      permissions: ['READ_DECLARATIONS'],
+    },
+  ];
+
+  for (const r of roles) {
+    const res = await pool.query(
+      `INSERT INTO roles (id, name) VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id`,
+      [randomUUID(), r.name],
+    );
+    const roleId = res.rows[0].id;
+
+    for (const permName of r.permissions) {
+      const pRes = await pool.query(`SELECT id FROM permissions WHERE name = $1`, [permName]);
+      if (pRes.rows[0]) {
+        await pool.query(
+          `INSERT INTO roles_permissions (role_id, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [roleId, pRes.rows[0].id],
+        );
+      }
+    }
+  }
+
+  // ─── Seed Default Super Admin User ──────────────────────────────────────────
+  const bcrypt = await import('bcryptjs');
+  const passwordHash = await bcrypt.hash('Password123!', 12);
+  const adminEmail = 'admin@example.com';
+
+  const userRes = await pool.query(
+    `INSERT INTO users (id, email, password_hash, created_at, updated_at)
+     VALUES ($1, $2, $3, NOW(), NOW())
+     ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash
+     RETURNING id`,
+    [randomUUID(), adminEmail, passwordHash],
+  );
+  const adminUserId = userRes.rows[0].id;
+
+  const superAdminRole = await pool.query(`SELECT id FROM roles WHERE name = 'SUPER_ADMIN'`);
+  if (superAdminRole.rows[0]) {
+    await pool.query(
+      `INSERT INTO users_roles (user_id, role_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [adminUserId, superAdminRole.rows[0].id],
+    );
+  }
+
+  console.log('✅ Seeded RBAC roles, permissions, and default admin (admin@example.com / Password123!)');
 }
 
 main()
@@ -126,3 +215,4 @@ main()
     process.exit(1);
   })
   .finally(() => pool.end());
+
