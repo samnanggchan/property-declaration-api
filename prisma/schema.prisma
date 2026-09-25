@@ -46,6 +46,7 @@ model UserRole {
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
+  @@index([roleId])
   @@map("users_roles")
 }
 
@@ -56,6 +57,7 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
+  @@index([permissionId])
   @@map("roles_permissions")
 }
 
@@ -71,6 +73,7 @@ model RefreshToken {
 
   @@index([tokenHash])
   @@index([familyId])
+  @@index([userId])
   @@map("refresh_tokens")
 }
 
@@ -88,6 +91,9 @@ model Declaration {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
+  @@index([createdAt(sort: Desc)])
+  @@index([certNumber])
   @@map("declarations")
 }
+
 

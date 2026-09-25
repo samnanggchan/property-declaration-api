@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { LandDeclaration, PartyFields, PersonFields, JointFields } from './types';
+import {
+  LandDeclaration,
+  PartyFields,
+  PersonFields,
+  JointFields,
+} from './declarations.types';
 import { CreateDeclarationDto, UpdateDeclarationDto } from './declarations.dto';
 
 function emptyPerson(): PersonFields {
@@ -50,6 +55,7 @@ function toDeclaration(row: {
   createdAt: Date;
   updatedAt: Date;
 }): LandDeclaration {
+  const jointData = (row.joint as JointFields) || emptyJoint();
   return {
     id: row.id,
     certNumber: row.certNumber,
@@ -58,7 +64,8 @@ function toDeclaration(row: {
     buyer: row.buyer as PartyFields,
     husband: row.husband as PersonFields,
     wife: row.wife as PersonFields,
-    joint: row.joint as JointFields,
+    joint: jointData,
+    cadastral: jointData.cadastral,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -84,21 +91,31 @@ export class DeclarationsService {
   async create(dto?: CreateDeclarationDto): Promise<LandDeclaration> {
     const seller = (dto?.seller as PartyFields) ?? emptyParty();
     const buyer = (dto?.buyer as PartyFields) ?? emptyParty();
+    const joint = (dto?.joint as JointFields) ?? emptyJoint();
+    if (dto?.cadastral) {
+      joint.cadastral = dto.cadastral;
+    }
+
     const row = await this.prisma.declaration.create({
       data: {
         certNumber: dto?.certNumber ?? '១២០៩០៦០៥- ០០០១',
         location: dto?.location ?? 'រាជធានីភ្នំពេញ',
         seller: seller as object,
         buyer: buyer as object,
-        husband: ((dto?.husband as PersonFields) ?? (seller.husband.name ? seller.husband : buyer.husband)) as object,
-        wife: ((dto?.wife as PersonFields) ?? (seller.wife.name ? seller.wife : buyer.wife)) as object,
-        joint: ((dto?.joint as JointFields) ?? emptyJoint()) as object,
+        husband: ((dto?.husband as PersonFields) ??
+          (seller.husband.name ? seller.husband : buyer.husband)) as object,
+        wife: ((dto?.wife as PersonFields) ??
+          (seller.wife.name ? seller.wife : buyer.wife)) as object,
+        joint: joint as object,
       },
     });
     return toDeclaration(row);
   }
 
-  async update(id: string, dto: UpdateDeclarationDto): Promise<LandDeclaration> {
+  async update(
+    id: string,
+    dto: UpdateDeclarationDto,
+  ): Promise<LandDeclaration> {
     // Ensure the record exists first — throws NotFoundException if not
     const existing = await this.findOne(id);
 
@@ -116,6 +133,17 @@ export class DeclarationsService {
         }
       : undefined;
 
+    const updatedJoint: JointFields = {
+      ...existing.joint,
+      ...(dto.joint || {}),
+    };
+    if (dto.cadastral) {
+      updatedJoint.cadastral = {
+        ...(existing.joint?.cadastral || {}),
+        ...dto.cadastral,
+      };
+    }
+
     const row = await this.prisma.declaration.update({
       where: { id },
       data: {
@@ -123,9 +151,11 @@ export class DeclarationsService {
         ...(dto.location !== undefined && { location: dto.location }),
         ...(seller && { seller: seller as object }),
         ...(buyer && { buyer: buyer as object }),
-        ...(dto.husband && { husband: { ...existing.husband, ...dto.husband } as object }),
+        ...(dto.husband && {
+          husband: { ...existing.husband, ...dto.husband } as object,
+        }),
         ...(dto.wife && { wife: { ...existing.wife, ...dto.wife } as object }),
-        ...(dto.joint && { joint: { ...existing.joint, ...dto.joint } as object }),
+        joint: updatedJoint as object,
       },
     });
     return toDeclaration(row);
