@@ -39,6 +39,14 @@ function emptyJoint(): JointFields {
     officeAddress: '',
     repName: '',
     repRole: '',
+    repPerson: emptyPerson(),
+    representativePerson: emptyPerson(),
+    witness1: { name: '', dob: '', idNumber: '', address: '' },
+    witness2: { name: '', dob: '', idNumber: '', address: '' },
+    witnesses: [],
+    rep1: { name: '', dob: '', idNumber: '', address: '' },
+    rep2: { name: '', dob: '', idNumber: '', address: '' },
+    representatives: [],
   };
 }
 
@@ -136,7 +144,7 @@ export class DeclarationsService {
     const updatedJoint: JointFields = {
       ...existing.joint,
       ...(dto.joint || {}),
-    };
+    } as JointFields;
     if (dto.cadastral) {
       updatedJoint.cadastral = {
         ...(existing.joint?.cadastral || {}),

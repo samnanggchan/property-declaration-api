@@ -44,6 +44,15 @@ export interface CadastralDetails {
   boundaries?: CadastralBoundaries;
 }
 
+export interface WitnessPerson {
+  name?: string;
+  dob?: string;
+  idNumber?: string;
+  address?: string;
+}
+
+export type RepresentativePerson = WitnessPerson;
+
 export interface JointFields {
   propertyType: string;
   area: string;
@@ -54,8 +63,16 @@ export interface JointFields {
   charter: string;
   entity: string;
   officeAddress: string;
-  repName: string;
-  repRole: string;
+  repName?: string;
+  repRole?: string;
+  repPerson?: Partial<PersonFields>;
+  representativePerson?: Partial<PersonFields>;
+  witness1?: WitnessPerson;
+  witness2?: WitnessPerson;
+  witnesses?: WitnessPerson[];
+  rep1?: WitnessPerson;
+  rep2?: WitnessPerson;
+  representatives?: WitnessPerson[];
   cadastral?: CadastralDetails;
 }
 
@@ -77,4 +94,3 @@ export interface LandDeclaration {
   createdAt: string;
   updatedAt: string;
 }
-

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, ValidateNested } from 'class-validator';
+import { IsString, IsOptional, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PersonFieldsDto {
@@ -156,6 +156,26 @@ export class CadastralDetailsDto {
   boundaries?: CadastralBoundariesDto;
 }
 
+export class WitnessPersonDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  dob?: string;
+
+  @IsString()
+  @IsOptional()
+  idNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+}
+
+export class RepresentativePersonDto extends WitnessPersonDto {}
+
 export class JointFieldsDto {
   @IsString()
   @IsOptional()
@@ -200,6 +220,48 @@ export class JointFieldsDto {
   @IsString()
   @IsOptional()
   repRole?: string;
+
+  @ValidateNested()
+  @Type(() => PersonFieldsDto)
+  @IsOptional()
+  repPerson?: PersonFieldsDto;
+
+  @ValidateNested()
+  @Type(() => PersonFieldsDto)
+  @IsOptional()
+  representativePerson?: PersonFieldsDto;
+
+  @ValidateNested()
+  @Type(() => WitnessPersonDto)
+  @IsOptional()
+  witness1?: WitnessPersonDto;
+
+  @ValidateNested()
+  @Type(() => WitnessPersonDto)
+  @IsOptional()
+  witness2?: WitnessPersonDto;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => WitnessPersonDto)
+  @IsOptional()
+  witnesses?: WitnessPersonDto[];
+
+  @ValidateNested()
+  @Type(() => RepresentativePersonDto)
+  @IsOptional()
+  rep1?: RepresentativePersonDto;
+
+  @ValidateNested()
+  @Type(() => RepresentativePersonDto)
+  @IsOptional()
+  rep2?: RepresentativePersonDto;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RepresentativePersonDto)
+  @IsOptional()
+  representatives?: RepresentativePersonDto[];
 
   @ValidateNested()
   @Type(() => CadastralDetailsDto)
