@@ -3,16 +3,45 @@
 ## Property Declaration Management System — Task Breakdown
 
 **Based on:** [PRD.md](file:///d:/David/New-System/property-declaration-api/docs/PRD.md) | [PLAN.md](file:///d:/David/New-System/property-declaration-api/docs/PLAN.md)  
-**Last Updated:** 2026-09-25
+**Last Updated:** 2026-09-29  
+**Status:** In Progress (Phases 0–1 Active)
 
 > Legend: ⬜ Not started | 🟡 In progress | ✅ Done | ❌ Blocked
+
+---
+
+## Completed Milestones (2026-09-25 to 2026-09-29) ✅
+
+### C.1 — Cadastral Extract Certificate System (តារាងសម្រង់វិញ្ញាបនប័ត្រ)
+- [x] `BE` Support Cadastral Extract Certificate data models (LMAP & HOUSE) in Prisma schema, types, and DTOs
+- [x] `FE` 6-tab modal editor ([`NaturalPersonModal`](file:///d:/David/New-System/property-declaration-admin/components/natural-person-modal.tsx)) supporting General Info, Cadastral Details, Parties, Representatives/Witnesses, and Notes
+- [x] `FE` Authentic 2-page print document layout ([`OfficialDeclarationDocument`](file:///d:/David/New-System/property-declaration-admin/components/official-declaration-document.tsx)) matching Cambodian land title registration forms
+
+### C.2 — Dual-Party Ownership Modeling
+- [x] `BE` Dual husband & wife representation for Seller (ភាគី "ក") and Buyer (ភាគី "ខ")
+- [x] `FE` Full Cambodian property registration field standards (Full Name, Khmer DOB, ID number, Address, Occupation)
+- [x] `FE` Null-safe rendering in official print view for individual or married couples
+
+### C.3 — Legal Entity & 1-Person Company Representative (នីតិបុគ្គល & អ្នកតំណាង)
+- [x] `BE` Updated declaration types and DTOs (`repPerson?: Partial<PersonFields>`, `isLegalEntity?: boolean`) in [`declarations.types.ts`](file:///d:/David/New-System/property-declaration-api/src/declarations/declarations.types.ts)
+- [x] `FE` Legal entity fields: Statute/Constitution (លក្ខន្តិកៈ), Company/Organization name (អង្គភាព), Registered Office Address (អាសយដ្ឋានទីស្នាក់ការ)
+- [x] `FE` Dedicated 1-person Company Representative form in Tab 4 of [`NaturalPersonModal`](file:///d:/David/New-System/property-declaration-admin/components/natural-person-modal.tsx)
+- [x] `FE` Dedicated 1-person Company Representative table in Section 4 of [`OfficialDeclarationDocument`](file:///d:/David/New-System/property-declaration-admin/components/official-declaration-document.tsx)
+
+### C.4 — 2-Witness System with Dynamic Age Calculation (សាក្សី - ២ នាក់)
+- [x] `FE` 2 clean witness forms (`witness1`, `witness2`) preserved in Tab 4 of modal
+- [x] `FE` Dynamic Khmer numeral age calculation (`calculateAgeFromDob`) from DOB string (e.g. `23.10.2004` -> `២១ ឆ្នាំ`)
+- [x] `FE` Clean rendering in Section 4 of official document showing dynamic age and complete details
+
+### C.5 — Backend Telemetry Decoupling
+- [x] `BE` Decoupled NestJS Observe module in [`src/app.module.ts`](file:///d:/David/New-System/property-declaration-api/src/app.module.ts) to enable clean offline and local development runs
 
 ---
 
 ## Phase 0: Stabilization & Security Hardening 🔴 CRITICAL
 
 ### 0.1 — Protect Declaration Endpoints
-- [ ] `BE` Add `@UseGuards(JwtAuthGuard, RbacGuard)` to `DeclarationsController`
+- [ ] `BE` Add `@UseGuards(JwtAuthGuard, RbacGuard)` to [`DeclarationsController`](file:///d:/David/New-System/property-declaration-api/src/declarations/declarations.controller.ts)
 - [ ] `BE` Add `@RequirePermissions('READ_DECLARATIONS')` to `GET /declarations` and `GET /declarations/:id`
 - [ ] `BE` Add `@RequirePermissions('WRITE_DECLARATIONS')` to `POST /declarations` and `PATCH /declarations/:id`
 - [ ] `BE` Add `@RequirePermissions('DELETE_DECLARATIONS')` to `DELETE /declarations/:id`
@@ -27,13 +56,13 @@
   - [ ] `useCreateDeclarationMutation()`
   - [ ] `useUpdateDeclarationMutation()`
   - [ ] `useDeleteDeclarationMutation()`
-- [ ] `FE` Refactor `declarations-view.tsx` to use RTK Query instead of `lib/api.ts`
+- [ ] `FE` Refactor [`declarations-view.tsx`](file:///d:/David/New-System/property-declaration-admin/components/declarations-view.tsx) to use RTK Query instead of legacy `lib/api.ts`
 - [ ] `FE` Remove or deprecate `app/api/declarations/` local Next.js route handlers
 - [ ] `FE` Remove or deprecate `app/api/declarations/store.ts` in-memory store
 - [ ] `FE` Verify all declaration API calls go through `baseQueryWithReauth`
 
 ### 0.3 — Fix Hardcoded Values
-- [ ] `FE` Replace hardcoded user ("shadcn" / "m@example.com") in `app-sidebar.tsx` with real user from `useAppSelector(state => state.auth.user)`
+- [ ] `FE` Replace hardcoded user ("shadcn" / "m@example.com") in [`app-sidebar.tsx`](file:///d:/David/New-System/property-declaration-admin/components/app-sidebar.tsx) with real user from `useAppSelector(state => state.auth.user)`
 - [ ] `FE` Show user's role badge next to email in sidebar
 - [ ] `BE` Remove `?? 'change-me-in-production'` JWT secret fallback — throw error if `JWT_SECRET` not set
 - [ ] `BE` Make CORS origins configurable via `CORS_ORIGINS` env var (comma-separated)
@@ -41,7 +70,7 @@
 ### 0.4 — Environment & Config
 - [ ] `BE` Create `docs/.env.example` with all required environment variables
 - [ ] `FE` Create `.env.example` with `NEXT_PUBLIC_API_URL`
-- [ ] `BE` Add `GET /health` endpoint returning `{ status: 'ok', timestamp }` 
+- [ ] `BE` Add `GET /health` endpoint returning `{ status: 'ok', timestamp }`
 - [ ] `BE` Validate `DATABASE_URL` and `JWT_SECRET` exist on startup (fail fast)
 
 ---
@@ -175,7 +204,7 @@
 - [ ] `FE` Show attachment list with preview/download links
 
 ### 3.4 — Analytics Page
-- [ ] `BE` Create `GET /api/stats/declarations-by-location` 
+- [ ] `BE` Create `GET /api/stats/declarations-by-location`
 - [ ] `BE` Create `GET /api/stats/declarations-by-property-type`
 - [ ] `BE` Create `GET /api/stats/user-activity` (declarations created/edited per user)
 - [ ] `FE` Build Analytics page with multiple chart types (bar, pie, line)
@@ -212,7 +241,7 @@
 
 ### 4.3 — Monitoring
 - [ ] `BE` Add structured logging with request IDs
-- [ ] `BE` Configure NestJS Observe with real credentials (or replace)
+- [ ] `BE` Configure NestJS Observe or equivalent logging provider
 - [ ] Set up error tracking (Sentry)
 - [ ] Add basic alerting for 5xx errors
 
@@ -225,17 +254,33 @@
 
 ---
 
+## Phase 5: Future Enhancements 🟢 LOW
+
+- [ ] `FE` Multi-language UI toggle (Khmer / English)
+- [ ] `BE` Email notifications (registration, password reset)
+- [ ] `BE` Batch declaration import (CSV/Excel)
+- [ ] `FE` Declaration templates
+- [ ] `FE` Digital signatures
+- [ ] `FE` Mobile-optimized declaration viewer
+- [ ] `BE`+`FE` GIS/Map integration for land plots
+- [ ] `BE` Reporting module with PDF generation
+- [ ] `BE` API versioning (v1, v2)
+- [ ] `BE`+`FE` WebSocket notifications for real-time updates
+
+---
+
 ## Quick Reference: File Locations
 
 ### Backend (`property-declaration-api`)
 | File | Purpose |
 |------|---------|
 | [`src/main.ts`](file:///d:/David/New-System/property-declaration-api/src/main.ts) | App bootstrap, CORS, pipes |
-| [`src/app.module.ts`](file:///d:/David/New-System/property-declaration-api/src/app.module.ts) | Root module |
+| [`src/app.module.ts`](file:///d:/David/New-System/property-declaration-api/src/app.module.ts) | Root module (telemetry decoupled) |
 | [`src/auth/auth.controller.ts`](file:///d:/David/New-System/property-declaration-api/src/auth/auth.controller.ts) | Auth endpoints |
 | [`src/auth/auth.service.ts`](file:///d:/David/New-System/property-declaration-api/src/auth/auth.service.ts) | Auth business logic |
 | [`src/declarations/declarations.controller.ts`](file:///d:/David/New-System/property-declaration-api/src/declarations/declarations.controller.ts) | Declaration CRUD endpoints |
-| [`src/declarations/declarations.service.ts`](file:///d:/David/New-System/property-declaration-api/src/declarations/declarations.service.ts) | Declaration business logic |
+| [`src/declarations/declarations.service.ts`](file:///d:/David/New-System/property-declaration-api/src/declarations/declarations.service.ts) | Declaration business logic & Prisma queries |
+| [`src/declarations/declarations.types.ts`](file:///d:/David/New-System/property-declaration-api/src/declarations/declarations.types.ts) | TypeScript definitions (parties, repPerson, witnesses) |
 | [`prisma/schema.prisma`](file:///d:/David/New-System/property-declaration-api/prisma/schema.prisma) | Database schema |
 | [`prisma/seed.ts`](file:///d:/David/New-System/property-declaration-api/prisma/seed.ts) | Seed data |
 
@@ -245,8 +290,10 @@
 | [`middleware.ts`](file:///d:/David/New-System/property-declaration-admin/middleware.ts) | Auth redirect middleware |
 | [`components/auth-guard.tsx`](file:///d:/David/New-System/property-declaration-admin/components/auth-guard.tsx) | Client-side auth check |
 | [`components/app-sidebar.tsx`](file:///d:/David/New-System/property-declaration-admin/components/app-sidebar.tsx) | Navigation sidebar |
-| [`components/declarations-view.tsx`](file:///d:/David/New-System/property-declaration-admin/components/declarations-view.tsx) | Declarations CRUD UI |
+| [`components/declarations-view.tsx`](file:///d:/David/New-System/property-declaration-admin/components/declarations-view.tsx) | Declarations CRUD table UI |
+| [`components/natural-person-modal.tsx`](file:///d:/David/New-System/property-declaration-admin/components/natural-person-modal.tsx) | 6-tab declaration modal editor with 1-person company rep & 2-witness forms |
+| [`components/official-declaration-document.tsx`](file:///d:/David/New-System/property-declaration-admin/components/official-declaration-document.tsx) | Authentic 2-page print layout with company rep table & 2 witnesses |
 | [`lib/redux/api/authApi.ts`](file:///d:/David/New-System/property-declaration-admin/lib/redux/api/authApi.ts) | RTK Query auth endpoints |
 | [`lib/redux/api/baseQueryWithReauth.ts`](file:///d:/David/New-System/property-declaration-admin/lib/redux/api/baseQueryWithReauth.ts) | Auto token refresh |
 | [`lib/api.ts`](file:///d:/David/New-System/property-declaration-admin/lib/api.ts) | Legacy fetch-based API client |
-| [`lib/types.ts`](file:///d:/David/New-System/property-declaration-admin/lib/types.ts) | Shared TypeScript types |
+| [`lib/types.ts`](file:///d:/David/New-System/property-declaration-admin/lib/types.ts) | Shared TypeScript definitions |

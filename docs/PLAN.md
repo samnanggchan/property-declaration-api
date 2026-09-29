@@ -3,7 +3,19 @@
 ## Property Declaration Management System — Phased Roadmap
 
 **Based on:** [PRD.md](file:///d:/David/New-System/property-declaration-api/docs/PRD.md)  
-**Last Updated:** 2026-09-25
+**Last Updated:** 2026-09-29  
+**Status:** In Progress (Phases 0–1 Active)
+
+---
+
+## Completed Milestones (2026-09-25 to 2026-09-29) ✅
+
+- [x] **Cadastral Extract Certificate (តារាងសម្រង់វិញ្ញាបនប័ត្រ)**: Full support for LMAP & HOUSE variants, 2-page print layout, and 6-tab modal editor.
+- [x] **Dual-Party Ownership**: Dual husband & wife modeling for both Seller and Buyer parties with Cambodian property registration field standards.
+- [x] **Legal Entity & Company Representative (នីតិបុគ្គល & អ្នកតំណាង)**: Full company information + 1-person dedicated representative form and table.
+- [x] **2-Witness System (សាក្សី - ២ នាក់)**: 2 clean witness forms with real-time automatic Khmer numeral age calculation (`calculateAgeFromDob`) relative to current date (e.g. `23.10.2004` -> `២១ ឆ្នាំ`).
+- [x] **Authentic Scanned Document Layout**: Print-ready declaration matching authentic Cambodian land title registration forms.
+- [x] **Backend Decoupling**: Cleaned up telemetry/NestJS Observe dependencies to allow standalone offline/dev execution.
 
 ---
 
@@ -18,8 +30,8 @@ Fix security vulnerabilities and broken patterns in existing code before adding 
 - Add `@RequirePermissions('DELETE_DECLARATIONS')` on DELETE route
 
 ### 0.2 Fix Frontend API Client
-- Migrate `declarations-view.tsx` from `lib/api.ts` (no credentials) to RTK Query `declarationsApi` endpoints
-- Remove or deprecate `app/api/declarations/` in-memory store (local Next.js mock)
+- Migrate `declarations-view.tsx` from `lib/api.ts` (fetch without credentials) to RTK Query `declarationsApi` endpoints
+- Deprecate local in-memory store in `app/api/declarations/store.ts` in favor of backend API
 - All API calls should go through `baseQueryWithReauth` for automatic token refresh
 
 ### 0.3 Fix Hardcoded Values
