@@ -154,6 +154,10 @@ export class CadastralDetailsDto {
   @Type(() => CadastralBoundariesDto)
   @IsOptional()
   boundaries?: CadastralBoundariesDto;
+
+  @IsString()
+  @IsOptional()
+  registrationDate?: string;
 }
 
 export class WitnessPersonDto {
@@ -262,6 +266,35 @@ export class JointFieldsDto {
   @Type(() => RepresentativePersonDto)
   @IsOptional()
   representatives?: RepresentativePersonDto[];
+
+  @IsString()
+  @IsOptional()
+  boundaryNorth?: string;
+
+  @IsString()
+  @IsOptional()
+  boundarySouth?: string;
+
+  @IsString()
+  @IsOptional()
+  boundaryEast?: string;
+
+  @IsString()
+  @IsOptional()
+  boundaryWest?: string;
+
+  @IsString()
+  @IsOptional()
+  registrationDate?: string;
+
+  @IsString()
+  @IsOptional()
+  registeredDate?: string;
+
+  @ValidateNested()
+  @Type(() => CadastralBoundariesDto)
+  @IsOptional()
+  boundaries?: CadastralBoundariesDto;
 
   @ValidateNested()
   @Type(() => CadastralDetailsDto)

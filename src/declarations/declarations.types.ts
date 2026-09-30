@@ -42,6 +42,7 @@ export interface CadastralDetails {
   usableArea?: string;
   builtArea?: string;
   boundaries?: CadastralBoundaries;
+  registrationDate?: string;
 }
 
 export interface WitnessPerson {
@@ -73,6 +74,13 @@ export interface JointFields {
   rep1?: WitnessPerson;
   rep2?: WitnessPerson;
   representatives?: WitnessPerson[];
+  boundaryNorth?: string;
+  boundarySouth?: string;
+  boundaryEast?: string;
+  boundaryWest?: string;
+  registrationDate?: string;
+  registeredDate?: string;
+  boundaries?: CadastralBoundaries;
   cadastral?: CadastralDetails;
 }
 

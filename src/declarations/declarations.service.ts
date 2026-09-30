@@ -47,6 +47,18 @@ function emptyJoint(): JointFields {
     rep1: { name: '', dob: '', idNumber: '', address: '' },
     rep2: { name: '', dob: '', idNumber: '', address: '' },
     representatives: [],
+    boundaryNorth: '',
+    boundarySouth: '',
+    boundaryEast: '',
+    boundaryWest: '',
+    registrationDate: '',
+    registeredDate: '',
+    boundaries: {
+      north: '',
+      south: '',
+      east: '',
+      west: '',
+    },
   };
 }
 
@@ -103,6 +115,14 @@ export class DeclarationsService {
     if (dto?.cadastral) {
       joint.cadastral = dto.cadastral;
     }
+    if (joint.boundaryNorth || joint.boundarySouth || joint.boundaryEast || joint.boundaryWest) {
+      joint.boundaries = {
+        north: joint.boundaryNorth || joint.boundaries?.north || '',
+        south: joint.boundarySouth || joint.boundaries?.south || '',
+        east: joint.boundaryEast || joint.boundaries?.east || '',
+        west: joint.boundaryWest || joint.boundaries?.west || '',
+      };
+    }
 
     const row = await this.prisma.declaration.create({
       data: {
@@ -149,6 +169,14 @@ export class DeclarationsService {
       updatedJoint.cadastral = {
         ...(existing.joint?.cadastral || {}),
         ...dto.cadastral,
+      };
+    }
+    if (updatedJoint.boundaryNorth || updatedJoint.boundarySouth || updatedJoint.boundaryEast || updatedJoint.boundaryWest) {
+      updatedJoint.boundaries = {
+        north: updatedJoint.boundaryNorth || updatedJoint.boundaries?.north || '',
+        south: updatedJoint.boundarySouth || updatedJoint.boundaries?.south || '',
+        east: updatedJoint.boundaryEast || updatedJoint.boundaries?.east || '',
+        west: updatedJoint.boundaryWest || updatedJoint.boundaries?.west || '',
       };
     }
 
