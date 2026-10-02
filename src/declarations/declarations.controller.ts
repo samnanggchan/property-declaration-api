@@ -6,20 +6,25 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { DeclarationsService } from './declarations.service';
 import { CreateDeclarationDto, UpdateDeclarationDto } from './declarations.dto';
+import { PaginationQueryDto, PaginatedResponse } from '../common/pagination.dto';
+import { LandDeclaration } from './declarations.types';
 
-@Controller('declarations')
+@Controller(['declarations', 'api/declarations'])
 export class DeclarationsController {
   constructor(private readonly declarationsService: DeclarationsService) {}
 
-  /** GET /declarations — list all land declarations */
+  /** GET /declarations — list land declarations with pagination and filtering */
   @Get()
-  findAll() {
-    return this.declarationsService.findAll();
+  findAll(
+    @Query() query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<LandDeclaration>> {
+    return this.declarationsService.findAll(query);
   }
 
   /** GET /declarations/:id — get a single declaration */

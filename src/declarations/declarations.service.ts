@@ -7,6 +7,7 @@ import {
   JointFields,
 } from './declarations.types';
 import { CreateDeclarationDto, UpdateDeclarationDto } from './declarations.dto';
+import { PaginationQueryDto, PaginatedResponse } from '../common/pagination.dto';
 
 function emptyPerson(): PersonFields {
   return {
@@ -95,11 +96,51 @@ function toDeclaration(row: {
 export class DeclarationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(): Promise<LandDeclaration[]> {
-    const rows = await this.prisma.declaration.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-    return rows.map(toDeclaration);
+  async findAll(
+    query?: PaginationQueryDto,
+  ): Promise<PaginatedResponse<LandDeclaration>> {
+    const page = Math.max(1, Number(query?.page) || 1);
+    const limit = Math.max(1, Number(query?.limit) || 20);
+    const search = (query?.search ?? '').trim();
+    const order = query?.order === 'asc' ? 'asc' : 'desc';
+
+    const allowedSortFields = ['createdAt', 'updatedAt', 'certNumber', 'location'];
+    const sortBy = allowedSortFields.includes(query?.sortBy ?? '')
+      ? (query?.sortBy as string)
+      : 'createdAt';
+
+    const where = search
+      ? {
+          OR: [
+            { certNumber: { contains: search, mode: 'insensitive' as const } },
+            { location: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
+    const skip = (page - 1) * limit;
+
+    const [total, rows] = await Promise.all([
+      this.prisma.declaration.count({ where }),
+      this.prisma.declaration.findMany({
+        where,
+        orderBy: { [sortBy]: order },
+        skip,
+        take: limit,
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    return {
+      data: rows.map(toDeclaration),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
   }
 
   async findOne(id: string): Promise<LandDeclaration> {

@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DeclarationsModule } from './declarations/declarations.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -18,6 +19,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     // }),
     DeclarationsModule,
     AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
