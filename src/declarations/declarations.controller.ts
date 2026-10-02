@@ -15,7 +15,7 @@ import { CreateDeclarationDto, UpdateDeclarationDto } from './declarations.dto';
 import { PaginationQueryDto, PaginatedResponse } from '../common/pagination.dto';
 import { LandDeclaration } from './declarations.types';
 
-@Controller(['declarations', 'api/declarations'])
+@Controller('declarations')
 export class DeclarationsController {
   constructor(private readonly declarationsService: DeclarationsService) {}
 

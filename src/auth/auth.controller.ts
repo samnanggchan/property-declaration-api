@@ -30,7 +30,7 @@ const cookieOptions = (maxAgeSeconds: number) => ({
   path: '/',
 });
 
-@Controller(['api/auth', 'auth'])
+@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -86,7 +86,7 @@ export class AuthController {
     return { user };
   }
 
-  // ─── Private helpers ───────────────────────────────────────────────────────
+  // ─── Private helpers 
 
   private setTokenCookies(res: Response, accessToken: string, refreshToken: string) {
     res

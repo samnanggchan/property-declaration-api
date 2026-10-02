@@ -43,6 +43,7 @@ export class AuthService {
       data: {
         email: dto.email,
         passwordHash,
+        avatar: dto.avatar ?? null,
         userRoles: { create: { roleId: role.id } },
       },
     });
@@ -50,7 +51,7 @@ export class AuthService {
     return this.buildAuthenticatedUser(user.id);
   }
 
-  // ─── Login ───────────────────────────────────────────────────────────────────
+  // ─── Login 
 
   async login(dto: LoginDto): Promise<{ user: AuthenticatedUser; accessToken: string; refreshToken: string }> {
     const user = await this.prisma.user.findUnique({
@@ -68,7 +69,7 @@ export class AuthService {
     return { user: authUser, accessToken, refreshToken };
   }
 
-  // ─── Refresh Token Rotation ──────────────────────────────────────────────────
+  // ─── Refresh Token Rotation 
 
   async refresh(incomingRefreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     const tokenHash = this.hashToken(incomingRefreshToken);
@@ -80,7 +81,7 @@ export class AuthService {
     // Token not found at all
     if (!stored) throw new UnauthorizedException('Invalid refresh token');
 
-    // ── Replay attack detection ──────────────────────────────────────────────
+    // ── Replay attack detection 
     // Token exists but was already revoked → someone reused an old token.
     // Immediately invalidate the ENTIRE token family to protect the account.
     if (stored.isRevoked) {
@@ -151,7 +152,13 @@ export class AuthService {
       ),
     ];
 
-    return { id: user.id, email: user.email, roles, permissions };
+    return {
+      id: user.id,
+      email: user.email,
+      avatar: user.avatar,
+      roles,
+      permissions,
+    };
   }
 
   private async issueTokenPair(
@@ -161,6 +168,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
+      avatar: user.avatar,
       roles: user.roles,
       permissions: user.permissions,
     };

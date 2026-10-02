@@ -5,6 +5,7 @@ import { PaginationQueryDto, PaginatedResponse } from '../common/pagination.dto'
 export interface UserSummaryDto {
   id: string;
   email: string;
+  avatar?: string | null;
   roles: string[];
   createdAt: string;
   updatedAt: string;
@@ -57,6 +58,7 @@ export class UsersService {
     const data: UserSummaryDto[] = rows.map((u) => ({
       id: u.id,
       email: u.email,
+      avatar: u.avatar,
       roles: u.userRoles.map((ur) => ur.role.name),
       createdAt: u.createdAt.toISOString(),
       updatedAt: u.updatedAt.toISOString(),
@@ -92,6 +94,7 @@ export class UsersService {
     return {
       id: user.id,
       email: user.email,
+      avatar: user.avatar,
       roles: user.userRoles.map((ur) => ur.role.name),
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),

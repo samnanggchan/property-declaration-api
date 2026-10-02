@@ -7,7 +7,7 @@ import {
 import { UsersService, UserSummaryDto } from './users.service';
 import { PaginationQueryDto, PaginatedResponse } from '../common/pagination.dto';
 
-@Controller(['users', 'api/users'])
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

@@ -25,6 +25,9 @@ async function bootstrap() {
     new ValidationPipe({ whitelist: true, transform: true }),
   );
 
+  // Set the global API prefix and version 🚀
+  app.setGlobalPrefix('api/v1');
+
   const port = process.env.PORT ?? 3003;
   await app.listen(port);
   console.log(`Property declaration API is running on port ${port}`);

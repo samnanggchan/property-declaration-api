@@ -1,6 +1,7 @@
 export interface JwtPayload {
   sub: string;       // user id
   email: string;
+  avatar?: string | null;
   roles: string[];
   permissions: string[];
 }
@@ -8,6 +9,7 @@ export interface JwtPayload {
 export interface AuthenticatedUser {
   id: string;
   email: string;
+  avatar?: string | null;
   roles: string[];
   permissions: string[];
 }
