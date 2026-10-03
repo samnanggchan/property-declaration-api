@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -60,12 +61,19 @@ export class AuthController {
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const incoming = req.cookies?.[COOKIE_REFRESH_TOKEN] as string | undefined;
     if (!incoming) {
-      res.clearCookie(COOKIE_ACCESS_TOKEN).clearCookie(COOKIE_REFRESH_TOKEN);
-      return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No refresh token' });
+      res.clearCookie(COOKIE_ACCESS_TOKEN, { path: '/' });
+      res.clearCookie(COOKIE_REFRESH_TOKEN, { path: '/' });
+      throw new UnauthorizedException('No refresh token');
     }
-    const { accessToken, refreshToken } = await this.authService.refresh(incoming);
-    this.setTokenCookies(res, accessToken, refreshToken);
-    return { ok: true };
+    try {
+      const { accessToken, refreshToken } = await this.authService.refresh(incoming);
+      this.setTokenCookies(res, accessToken, refreshToken);
+      return { ok: true };
+    } catch (err) {
+      res.clearCookie(COOKIE_ACCESS_TOKEN, { path: '/' });
+      res.clearCookie(COOKIE_REFRESH_TOKEN, { path: '/' });
+      throw err;
+    }
   }
 
   /** POST /auth/logout */

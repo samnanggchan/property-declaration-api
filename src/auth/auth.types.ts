@@ -2,6 +2,7 @@ export interface JwtPayload {
   sub: string;       // user id
   email: string;
   avatar?: string | null;
+  isActive?: boolean;
   roles: string[];
   permissions: string[];
 }
@@ -10,6 +11,7 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   avatar?: string | null;
+  isActive: boolean;
   roles: string[];
   permissions: string[];
 }

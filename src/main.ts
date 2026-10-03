@@ -2,12 +2,10 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
-import { AppModule, ObserveInstrument } from './app.module';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    instrument: ObserveInstrument,
-  });
+  const app = await NestFactory.create(AppModule);
 
   // Enable cookie parser so HttpOnly cookies are parsed into req.cookies
   app.use(cookieParser());
@@ -19,6 +17,11 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   });
+
+  // Serve uploads directory statically at /uploads
+  const express = await import('express');
+  const path = await import('path');
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Validate and transform request bodies via DTOs
   app.useGlobalPipes(
