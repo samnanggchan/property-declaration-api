@@ -30,6 +30,7 @@ model User {
 model Role {
   id              String           @id @default(uuid())
   name            String           @unique
+  description     String?
   userRoles       UserRole[]
   rolePermissions RolePermission[]
 
@@ -39,6 +40,7 @@ model Role {
 model Permission {
   id              String           @id @default(uuid())
   name            String           @unique
+  description     String?
   rolePermissions RolePermission[]
 
   @@map("permissions")
@@ -99,6 +101,42 @@ model Declaration {
   @@index([createdAt(sort: Desc)])
   @@index([certNumber])
   @@map("declarations")
+}
+
+model InheritanceRequest {
+  id                          String   @id @default(uuid())
+  title                       String?
+  refNo                       String?  @map("ref_no")
+  location                    String?
+  area                        String?
+  propertyType                String?  @map("property_type")
+  date                        String?
+  deceasedSangkat             String?  @map("deceased_sangkat")
+  titleDeedNo                 String?  @map("title_deed_no")
+  plotNo                      String?  @map("plot_no")
+  streetNo                    String?  @map("street_no")
+  village                     String?
+  sangkat                     String?
+  khan                        String?
+  city                        String?
+  authorizedPerson            String?  @map("authorized_person")
+  authorizedRelationDeceased  String?  @map("authorized_relation_deceased")
+  authorizedRelationHeirs     String?  @map("authorized_relation_heirs")
+  communeChiefName            String?  @map("commune_chief_name")
+  heirCertNo                  String?  @map("heir_cert_no")
+  letterRefNo                 String?  @map("letter_ref_no")
+  letterRefDate               String?  @map("letter_ref_date")
+  deceased                    Json     @default("[]")
+  applicants                  Json     @default("[]")
+  witnesses                   Json     @default("[]")
+  children                    Json     @default("[]")
+  relatives                   Json     @default("[]")
+  createdAt                   DateTime @default(now()) @map("created_at")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+
+  @@index([createdAt(sort: Desc)])
+  @@index([refNo])
+  @@map("inheritance_requests")
 }
 
 
