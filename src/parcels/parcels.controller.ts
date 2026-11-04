@@ -20,7 +20,7 @@ import { randomUUID } from 'crypto';
 import type { Express } from 'express';
 import { ParcelsService } from './parcels.service';
 import { BulkUpdateDto } from './parcels.dto';
-import { BulkUpdateReport } from './parcels.types';
+import { BulkUpdateReport, BulkUpdateOptions } from './parcels.types';
 
 @Controller('parcels')
 export class ParcelsController {
@@ -78,7 +78,7 @@ export class ParcelsController {
     }
 
     // Merge query params and body form fields (query takes precedence)
-    const options: BulkUpdateDto = {
+    const options: BulkUpdateOptions = {
       dryRun:
         queryDto.dryRun !== undefined
           ? queryDto.dryRun
@@ -88,6 +88,9 @@ export class ParcelsController {
       tableName: queryDto.tableName || bodyDto.tableName || 'parcels',
       columnName: queryDto.columnName || bodyDto.columnName || 'parcel_number',
       batchSize: queryDto.batchSize || bodyDto.batchSize || 5000,
+      operation: (queryDto.operation ||
+        bodyDto.operation ||
+        'update') as any,
     };
 
     let originalName = file.originalname;

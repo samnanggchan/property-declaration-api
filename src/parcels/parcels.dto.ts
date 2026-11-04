@@ -1,5 +1,6 @@
-import { IsBoolean, IsOptional, IsString, IsInt, Min, Max } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, IsInt, Min, Max, IsIn } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { ParcelOperation } from './parcels.types';
 
 export class BulkUpdateDto {
   /**
@@ -39,4 +40,12 @@ export class BulkUpdateDto {
   @Min(500)
   @Max(10000)
   batchSize?: number = 5000;
+
+  /**
+   * Operation mode: 'update' (default), 'upsert', 'seed_old', or 'insert_new'
+   */
+  @IsOptional()
+  @IsString()
+  @IsIn(['update', 'upsert', 'seed_old', 'insert_new'])
+  operation?: string = 'update';
 }

@@ -139,4 +139,17 @@ model InheritanceRequest {
   @@map("inheritance_requests")
 }
 
+model Parcel {
+  id           String   @id @default(uuid())
+  parcelNumber String   @unique @map("parcel_number")
+  sheetNumber  String?  @map("sheet_number")
+  location     String?
+  area         String?
+  propertyType String?  @map("property_type")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
+  @@index([createdAt(sort: Desc)])
+  @@index([parcelNumber])
+  @@map("parcels")
+}

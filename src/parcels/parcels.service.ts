@@ -37,6 +37,7 @@ export class ParcelsService {
   ): Promise<BulkUpdateReport> {
     const startTime = Date.now();
     const dryRun = Boolean(options.dryRun);
+    const operation = options.operation || "update";
     const tableName = this.sanitizeIdentifier(options.tableName || 'parcels');
     const columnName = this.sanitizeIdentifier(
       options.columnName || 'parcel_number',
@@ -47,7 +48,7 @@ export class ParcelsService {
     } catch {}
 
     this.logger.log(
-      `Starting bulk parcel update (dryRun=${dryRun}, table=${tableName}, column=${columnName}, file=${originalName})`,
+      `Starting bulk parcel update (dryRun=${dryRun}, operation=${operation}, table=${tableName}, column=${columnName}, file=${originalName})`,
     );
 
     // 1. Parse Excel / CSV into memory mapping with deduplication
@@ -165,27 +166,74 @@ export class ParcelsService {
         (r) => r.new_parcel_number,
       );
 
-      // 5. Execute UPDATE or ROLLBACK (if dryRun)
+      // 5. Execute Operation (update, upsert, seed_old, insert_new) or ROLLBACK (if dryRun)
       let updatedCount = 0;
+      let insertedCount = 0;
+
       if (dryRun) {
         await client.query('ROLLBACK');
         this.logger.log(
-          `[DRY RUN] Rolled back transaction. Would update: ${existingMatches} rows.`,
+          `[DRY RUN] Rolled back transaction. Matches: ${existingMatches}, Missing: ${missingCount}, Operation: ${operation}.`,
         );
       } else {
-        const updateRes = await client.query(
-          `
-          UPDATE "${tableName}" AS p
-          SET "${columnName}" = m.new_parcel_number
-          FROM parcel_mapping AS m
-          WHERE p."${columnName}" = m.old_parcel_number;
-          `,
-        );
-        updatedCount = updateRes.rowCount || 0;
+        if (operation === 'seed_old') {
+          // Insert old parcel numbers into the table (useful to populate table initially)
+          const insertRes = await client.query(`
+            INSERT INTO "${tableName}" (id, "${columnName}")
+            SELECT gen_random_uuid()::text, m.old_parcel_number
+            FROM parcel_mapping m
+            ON CONFLICT ("${columnName}") DO NOTHING;
+          `);
+          insertedCount = insertRes.rowCount || 0;
+          this.logger.log(`[LIVE SEED] Inserted ${insertedCount} old parcel numbers.`);
+        } else if (operation === 'insert_new') {
+          // Insert new parcel numbers directly
+          const insertRes = await client.query(`
+            INSERT INTO "${tableName}" (id, "${columnName}")
+            SELECT gen_random_uuid()::text, m.new_parcel_number
+            FROM parcel_mapping m
+            ON CONFLICT ("${columnName}") DO NOTHING;
+          `);
+          insertedCount = insertRes.rowCount || 0;
+          this.logger.log(`[LIVE INSERT] Inserted ${insertedCount} new parcel numbers.`);
+        } else if (operation === 'upsert') {
+          // Update existing matching old numbers
+          const updateRes = await client.query(`
+            UPDATE "${tableName}" AS p
+            SET "${columnName}" = m.new_parcel_number
+            FROM parcel_mapping AS m
+            WHERE p."${columnName}" = m.old_parcel_number;
+          `);
+          updatedCount = updateRes.rowCount || 0;
+
+          // Insert new numbers that didn't exist
+          const insertRes = await client.query(`
+            INSERT INTO "${tableName}" (id, "${columnName}")
+            SELECT gen_random_uuid()::text, m.new_parcel_number
+            FROM parcel_mapping m
+            LEFT JOIN "${tableName}" p ON p."${columnName}" = m.new_parcel_number
+            WHERE p."${columnName}" IS NULL
+            ON CONFLICT ("${columnName}") DO NOTHING;
+          `);
+          insertedCount = insertRes.rowCount || 0;
+          this.logger.log(`[LIVE UPSERT] Updated ${updatedCount}, Inserted ${insertedCount}.`);
+        } else {
+          // Standard bulk UPDATE
+          const updateRes = await client.query(
+            `
+            UPDATE "${tableName}" AS p
+            SET "${columnName}" = m.new_parcel_number
+            FROM parcel_mapping AS m
+            WHERE p."${columnName}" = m.old_parcel_number;
+            `,
+          );
+          updatedCount = updateRes.rowCount || 0;
+          this.logger.log(
+            `[LIVE UPDATE] Successfully updated ${updatedCount} records in ${tableName}.${columnName}.`,
+          );
+        }
+
         await client.query('COMMIT');
-        this.logger.log(
-          `[LIVE UPDATE] Successfully updated ${updatedCount} records in ${tableName}.${columnName}.`,
-        );
       }
 
       const executionTimeMs = Date.now() - startTime;
@@ -193,6 +241,7 @@ export class ParcelsService {
       return {
         success: true,
         dryRun,
+        operation,
         targetTable: tableName,
         targetColumn: columnName,
         totalRowsInExcel: totalRows,
@@ -203,14 +252,21 @@ export class ParcelsService {
         missingOldNumbersInDb: missingCount,
         conflictingNewNumbersInDb: conflictCount,
         updatedCount,
+        insertedCount,
         executionTimeMs,
         sampleMissingOldNumbers: sampleMissing,
         sampleConflictingNewNumbers: sampleConflicts,
         sampleDuplicateOldNumbers: duplicateOldList.slice(0, 20),
         sampleDuplicateNewNumbers: duplicateNewList.slice(0, 20),
         message: dryRun
-          ? `Dry run complete in ${executionTimeMs}ms. ${existingMatches} matching records ready to update.`
-          : `Bulk update complete in ${executionTimeMs}ms. ${updatedCount} records successfully updated.`,
+          ? `Dry run complete in ${executionTimeMs}ms. ${existingMatches} matching records in DB (${missingCount} missing).`
+          : operation === 'seed_old'
+            ? `Seeded ${insertedCount} old parcel numbers in ${executionTimeMs}ms.`
+            : operation === 'insert_new'
+              ? `Inserted ${insertedCount} new parcel numbers in ${executionTimeMs}ms.`
+              : operation === 'upsert'
+                ? `Upsert complete: ${updatedCount} updated, ${insertedCount} inserted in ${executionTimeMs}ms.`
+                : `Bulk update complete in ${executionTimeMs}ms. ${updatedCount} records successfully updated.`,
       };
     } catch (error) {
       if (client) {
@@ -447,9 +503,30 @@ export class ParcelsService {
     );
 
     if (!tableRes.rows[0]?.exists) {
-      throw new BadRequestException(
-        `Target table "${tableName}" does not exist in the database. Please create it or verify the table name.`,
-      );
+      if (tableName === 'parcels') {
+        this.logger.log('Table "parcels" does not exist. Auto-creating table...');
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS "parcels" (
+            "id" TEXT NOT NULL,
+            "parcel_number" TEXT NOT NULL,
+            "sheet_number" TEXT,
+            "location" TEXT,
+            "area" TEXT,
+            "property_type" TEXT,
+            "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "parcels_pkey" PRIMARY KEY ("id")
+          );
+          CREATE UNIQUE INDEX IF NOT EXISTS "parcels_parcel_number_key" ON "parcels"("parcel_number");
+          CREATE INDEX IF NOT EXISTS "parcels_parcel_number_idx" ON "parcels"("parcel_number");
+          CREATE INDEX IF NOT EXISTS "parcels_created_at_idx" ON "parcels"("created_at" DESC);
+        `);
+        this.logger.log('Table "parcels" auto-created successfully.');
+      } else {
+        throw new BadRequestException(
+          `Target table "${tableName}" does not exist in the database. Please create it or verify the table name.`,
+        );
+      }
     }
 
     const colRes = await client.query(
