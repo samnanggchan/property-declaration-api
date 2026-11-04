@@ -5,6 +5,7 @@ import { DeclarationsModule } from './declarations/declarations.module';
 import { InheritanceRequestsModule } from './inheritance-requests/inheritance-requests.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { ParcelsModule } from './parcels/parcels.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UsersModule } from './users/users.module';
     InheritanceRequestsModule,
     AuthModule,
     UsersModule,
+    ParcelsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
