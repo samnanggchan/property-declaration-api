@@ -90,12 +90,16 @@ export class ParcelsController {
       batchSize: queryDto.batchSize || bodyDto.batchSize || 5000,
     };
 
+    let originalName = file.originalname;
+    try {
+      originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    } catch {}
     const filePath = file.path;
 
     try {
       return await this.parcelsService.processBulkUpdate(
         filePath,
-        file.originalname,
+        originalName,
         options,
       );
     } finally {

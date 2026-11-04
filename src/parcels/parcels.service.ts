@@ -42,6 +42,9 @@ export class ParcelsService {
       options.columnName || 'parcel_number',
     );
     const batchSize = Math.max(500, Math.min(options.batchSize || 5000, 10000));
+    try {
+      originalName = Buffer.from(originalName, 'latin1').toString('utf8');
+    } catch {}
 
     this.logger.log(
       `Starting bulk parcel update (dryRun=${dryRun}, table=${tableName}, column=${columnName}, file=${originalName})`,
@@ -266,36 +269,81 @@ export class ParcelsService {
       throw new BadRequestException('No worksheets found in the uploaded file.');
     }
 
-    let oldColIdx = 1;
-    let newColIdx = 2;
+    let oldColIdx = -1;
+    let newColIdx = -1;
     let startRow = 1;
 
-    // Detect headers on row 1
-    const row1 = worksheet.getRow(1);
-    if (row1 && row1.cellCount > 0) {
-      let foundHeader = false;
-      row1.eachCell((cell, colNumber) => {
+    // 1. Scan the first 25 rows to detect headers (e.g. at Row 2, Columns C & D)
+    const maxScanRow = Math.min(25, worksheet.rowCount || 25);
+    for (let r = 1; r <= maxScanRow; r++) {
+      const row = worksheet.getRow(r);
+      if (!row || row.cellCount === 0) continue;
+
+      let rowOldCol = -1;
+      let rowNewCol = -1;
+
+      row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
         const text = this.cellToString(cell.value).toLowerCase().trim();
         if (
           text.includes('old') ||
           text.includes('ចាស់') ||
-          text.includes('previous')
+          text.includes('previous') ||
+          text.includes('បច្ចុប្បន្ន')
         ) {
-          oldColIdx = colNumber;
-          foundHeader = true;
+          rowOldCol = colNumber;
         } else if (
           text.includes('new') ||
           text.includes('ថ្មី') ||
-          text.includes('next')
+          text.includes('next') ||
+          text.includes('ផ្លាស់ប្តូរ')
         ) {
-          newColIdx = colNumber;
-          foundHeader = true;
+          rowNewCol = colNumber;
         }
       });
-      if (foundHeader) {
-        startRow = 2;
+
+      if (rowOldCol > 0 && rowNewCol > 0) {
+        oldColIdx = rowOldCol;
+        newColIdx = rowNewCol;
+        startRow = r + 1;
+        this.logger.log(
+          `Detected headers at Row ${r}: Old Column=${oldColIdx} ("${this.cellToString(row.getCell(oldColIdx).value)}"), New Column=${newColIdx} ("${this.cellToString(row.getCell(newColIdx).value)}"). Data starts at Row ${startRow}.`
+        );
+        break;
       }
     }
+
+    // 2. Fallback: If no explicit text headers found, scan for first row with at least 2 non-empty columns
+    if (oldColIdx <= 0 || newColIdx <= 0) {
+      for (let r = 1; r <= maxScanRow; r++) {
+        const row = worksheet.getRow(r);
+        if (!row) continue;
+        const populatedCols: number[] = [];
+        row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+          if (this.cellToString(cell.value).trim().length > 0) {
+            populatedCols.push(colNumber);
+          }
+        });
+        if (populatedCols.length >= 2) {
+          oldColIdx = populatedCols[0];
+          newColIdx = populatedCols[1];
+          const c1Text = this.cellToString(row.getCell(oldColIdx).value).toLowerCase();
+          const isHeader =
+            c1Text.includes('old') ||
+            c1Text.includes('parcel') ||
+            c1Text.includes('ក្បាលដី') ||
+            c1Text.includes('លេខ');
+          startRow = isHeader ? r + 1 : r;
+          this.logger.log(
+            `Fallback detected columns at Row ${r}: Col ${oldColIdx} and Col ${newColIdx}. Data starts at Row ${startRow}.`
+          );
+          break;
+        }
+      }
+    }
+
+    // Default to Col 1 & 2 if entirely empty sheet
+    if (oldColIdx <= 0) oldColIdx = 1;
+    if (newColIdx <= 0) newColIdx = 2;
 
     const validRows: ParcelMappingRow[] = [];
     const seenOld = new Set<string>();
