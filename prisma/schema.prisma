@@ -153,3 +153,29 @@ model Parcel {
   @@index([parcelNumber])
   @@map("parcels")
 }
+
+model TransferApplication {
+  id                String   @id @default(uuid())
+  title             String?
+  parcelNumber      String?  @map("parcel_number")
+  location          String?
+  date              String?
+  cause             String?
+  causeDate         String?  @map("cause_date")
+  causeOther        String?  @map("cause_other")
+  purpose           String?
+  coOwnerName       String?  @map("co_owner_name")
+  coOwnerNo         String?  @map("co_owner_no")
+  newCoOwnerShare   String?  @map("new_co_owner_share")
+  attachments       String?
+  parcelAndProperty Json     @default("{}") @map("parcel_and_property")
+  sellers           Json     @default("[]")
+  buyers            Json     @default("[]")
+  witnesses         Json     @default("[]")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([createdAt(sort: Desc)])
+  @@index([parcelNumber])
+  @@map("transfer_applications")
+}
