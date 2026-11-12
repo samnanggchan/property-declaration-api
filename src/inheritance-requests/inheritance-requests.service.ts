@@ -27,7 +27,12 @@ function toInheritanceRequest(row: any): InheritanceRequestItem {
     propertyType: row.propertyType ?? 'លំនៅដ្ឋាន',
     date: row.date ?? '',
     deceasedSangkat: row.deceasedSangkat ?? '',
+    deceasedKhan:
+      row.deceasedKhan ??
+      (Array.isArray(row.deceased) && (row.deceased[0] as any)?.khan) ??
+      '',
     titleDeedNo: row.titleDeedNo ?? '',
+    titleDeedDate: row.refNo ?? '',
     plotNo: row.plotNo ?? '',
     streetNo: row.streetNo ?? '',
     village: row.village ?? '',
@@ -136,10 +141,16 @@ export class InheritanceRequestsService {
   async create(
     dto?: CreateInheritanceRequestDto,
   ): Promise<InheritanceRequestItem> {
+    let deceasedList = dto?.deceased ?? [];
+    if (dto?.deceasedKhan && Array.isArray(deceasedList)) {
+      if (deceasedList.length === 0) deceasedList = [{} as any];
+      deceasedList[0] = { ...deceasedList[0], khan: dto.deceasedKhan };
+    }
+
     const row = await this.prisma.inheritanceRequest.create({
       data: {
         title: dto?.title ?? 'ពាក្យស្នើសុំផ្ទេរសិទ្ធិកាន់កាប់អចលនវត្ថុជាមរតក',
-        refNo: dto?.refNo ?? '',
+        refNo: dto?.titleDeedDate ?? dto?.refNo ?? '',
         location: dto?.location ?? '',
         area: dto?.area ?? '',
         propertyType: dto?.propertyType ?? 'លំនៅដ្ឋាន',
@@ -159,7 +170,7 @@ export class InheritanceRequestsService {
         heirCertNo: dto?.heirCertNo ?? '',
         letterRefNo: dto?.letterRefNo ?? '',
         letterRefDate: dto?.letterRefDate ?? '',
-        deceased: dto?.deceased ?? [],
+        deceased: deceasedList,
         applicants: dto?.applicants ?? [],
         witnesses: dto?.witnesses ?? [],
         children: dto?.children ?? [],
@@ -181,11 +192,25 @@ export class InheritanceRequestsService {
       throw new NotFoundException(`Inheritance request "${id}" not found`);
     }
 
+    let updatedDeceased = dto.deceased;
+    if (dto.deceasedKhan !== undefined) {
+      const baseList = Array.isArray(dto.deceased ?? existing.deceased)
+        ? [...(dto.deceased ?? (existing.deceased as any[]))]
+        : [];
+      if (baseList.length === 0) baseList.push({} as any);
+      baseList[0] = { ...baseList[0], khan: dto.deceasedKhan };
+      updatedDeceased = baseList;
+    }
+
     const row = await this.prisma.inheritanceRequest.update({
       where: { id },
       data: {
         ...(dto.title !== undefined && { title: dto.title }),
-        ...(dto.refNo !== undefined && { refNo: dto.refNo }),
+        ...(dto.titleDeedDate !== undefined
+          ? { refNo: dto.titleDeedDate }
+          : dto.refNo !== undefined
+            ? { refNo: dto.refNo }
+            : {}),
         ...(dto.location !== undefined && { location: dto.location }),
         ...(dto.area !== undefined && { area: dto.area }),
         ...(dto.propertyType !== undefined && {
@@ -219,7 +244,7 @@ export class InheritanceRequestsService {
         ...(dto.letterRefDate !== undefined && {
           letterRefDate: dto.letterRefDate,
         }),
-        ...(dto.deceased !== undefined && { deceased: dto.deceased }),
+        ...(updatedDeceased !== undefined && { deceased: updatedDeceased }),
         ...(dto.applicants !== undefined && { applicants: dto.applicants }),
         ...(dto.witnesses !== undefined && { witnesses: dto.witnesses }),
         ...(dto.children !== undefined && { children: dto.children }),

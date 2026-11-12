@@ -31,7 +31,15 @@ export class CreateInheritanceRequestDto {
 
   @IsString()
   @IsOptional()
+  deceasedKhan?: string;
+
+  @IsString()
+  @IsOptional()
   titleDeedNo?: string;
+
+  @IsString()
+  @IsOptional()
+  titleDeedDate?: string;
 
   @IsString()
   @IsOptional()

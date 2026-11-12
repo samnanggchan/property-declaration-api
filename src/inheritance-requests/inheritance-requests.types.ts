@@ -4,6 +4,7 @@ export interface Deceased {
   deathDate: string;
   deathCertNo: string;
   deathCertDate: string;
+  khan?: string;
 }
 
 export interface Applicant {
@@ -50,7 +51,9 @@ export interface InheritanceRequestItem {
   propertyType: string;
   date: string;
   deceasedSangkat: string;
+  deceasedKhan?: string;
   titleDeedNo: string;
+  titleDeedDate?: string;
   plotNo: string;
   streetNo: string;
   village: string;
